@@ -7,14 +7,26 @@ export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [balance, setBalance] = useState(0)
   const [account, setAccount] = useState(null)
+  const [userName, setUserName] = useState('')
   const [amountInput, setAmountInput] = useState('')
   const [userEmail] = useState(localStorage.getItem('userEmail') || 'cliente@geobank.com')
 
-  // Carrega conta e saldo do Supabase
+  // Carrega dados do usuário, conta e saldo do Supabase
   const loadAccountData = async () => {
-    const { data: userData } = await supabase.from('users').select('id').eq('email', userEmail).single()
+    const { data: userData } = await supabase
+      .from('users')
+      .select('id, name')
+      .eq('email', userEmail)
+      .single()
+
     if (userData) {
-      const { data: accData } = await supabase.from('accounts').select('*').eq('user_id', userData.id).single()
+      setUserName(userData.name)
+      const { data: accData } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userData.id)
+        .single()
+
       if (accData) {
         setAccount(accData)
         setBalance(parseFloat(accData.balance))
@@ -37,7 +49,6 @@ export default function Dashboard() {
       else return alert('Saldo insuficiente.')
     }
 
-    // Atualiza saldo no Supabase
     await supabase.from('accounts').update({ balance: newBalance }).eq('id', account.id)
     await supabase.from('transactions').insert([{
       account_id: account.id,
@@ -91,8 +102,12 @@ export default function Dashboard() {
           </button>
         </header>
 
-        <section className="px-8 py-4">
-          <p className="text-zinc-400 text-xs font-semibold uppercase tracking-widest mb-2">Saldo Disponível</p>
+        {/* MENSAGEM DE SAUDAÇÃO COM NOME */}
+        <section className="px-8 pt-2 pb-4">
+          <h1 className="text-2xl font-bold text-zinc-900 mb-1">
+            Olá, {userName ? userName.split(' ')[0] : 'Cliente'}! 👋
+          </h1>
+          <p className="text-zinc-400 text-xs font-semibold uppercase tracking-widest mt-3 mb-1">Saldo Disponível</p>
           <h2 className="text-5xl font-light tracking-tighter text-zinc-900">
             <span className="text-2xl text-zinc-400 font-medium mr-1">R$</span>
             {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
