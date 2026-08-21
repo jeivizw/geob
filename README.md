@@ -1,16 +1,61 @@
-# React + Vite
+# 💳 GeoBank — Aplicação Web FinTech
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+O **GeoBank** é uma aplicação web completa de simulação bancária desenvolvida com React, Vite e Tailwind CSS, integrada ao banco de dados relacional **Supabase (PostgreSQL)**. O projeto conta com autenticação de usuários, gestão de saldo em tempo real, transferências Pix, criação e exclusão dinâmica de cartões virtuais e registro de logs de segurança.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Funcionalidades
 
-## React Compiler
+* **Autenticação & Contas:**
+  * Cadastro de novos usuários com validação de campos.
+  * Trigger SQL para criação automática de conta bancária e saldo inicial ao se registrar.
+  * Login com verificação e persistência de sessão via `localStorage`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+* **Dashboard Financeiro:**
+  * Visualização de saldo atualizado em tempo real.
+  * Simulação de depósitos e saques instantâneos com persistência no Supabase.
+  * Menu lateral gaveta (*drawer menu*) com navegação fluida.
+  * Verificação simulada de segurança via Geolocalização.
 
-## Expanding the Oxlint configuration
+* **Área Pix:**
+  * Envio de Pix com validação de saldo.
+  * Transferência entre contas cadastradas na plataforma (débito/crédito automático).
+  * Histórico e registro de transações no banco de dados.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+* **Gestão de Cartões:**
+  * Listagem de cartões físicos e virtuais.
+  * Geração instantânea de novos cartões virtuais dinâmicos.
+  * Exclusão permanente de cartões salvos no banco.
+
+---
+
+## 🛠️ Tecnologias Utilizadas
+
+| Categoria | Tecnologia |
+| :--- | :--- |
+| **Frontend** | React, Vite, React Router DOM |
+| **Estilização** | Tailwind CSS, FontAwesome |
+| **Backend / DB** | Supabase (PostgreSQL) |
+| **Cliente API** | `@supabase/supabase-js` |
+
+---
+
+## 📁 Estrutura do Projeto
+
+```text
+geobank/
+├── src/
+│   ├── lib/
+│   │   └── supabase.js      # Inicialização do cliente Supabase
+│   ├── pages/
+│   │   ├── Login.jsx        # Tela de Autenticação
+│   │   ├── Register.jsx     # Tela de Cadastro de Usuário
+│   │   ├── Dashboard.jsx    # Painel Principal e Gestão de Saldo
+│   │   ├── Pix.jsx          # Transferências Pix
+│   │   └── Cards.jsx        # Gestão e Exclusão de Cartões
+│   ├── App.jsx              # Rotas da Aplicação
+│   └── main.jsx             # Ponto de Entrada React
+├── .env                     # Variáveis de ambiente (não enviado ao Git)
+├── .gitignore
+├── package.json
+└── README.md
