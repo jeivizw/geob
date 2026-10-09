@@ -7,17 +7,57 @@ export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [balance, setBalance] = useState(0)
   const [account, setAccount] = useState(null)
-  const [userName, setUserName] = useState('')
+  
+  // Carrega imediatamente o nome do Google/localStorage se existir
+  const [userName, setUserName] = useState(localStorage.getItem('userName') || '')
   const [amountInput, setAmountInput] = useState('')
   const [userEmail] = useState(localStorage.getItem('userEmail') || 'cliente@geobank.com')
 
   // Carrega dados do usuário, conta e saldo do Supabase
   const loadAccountData = async () => {
-    const { data: userData } = await supabase
+    if (!userEmail) return
+
+    // 1. Busca usuário na tabela 'users'
+    let { data: userData } = await supabase
       .from('users')
       .select('id, name')
       .eq('email', userEmail)
-      .single()
+      .maybeSingle()
+
+    // 2. Se logou via Google e ainda não está na tabela 'users', cria o registro e a conta bancária
+    if (!userData && userEmail !== 'cliente@geobank.com') {
+      const savedName = localStorage.getItem('userName') || 'Cliente'
+      const { data: newUser } = await supabase
+        .from('users')
+        .insert([{
+          name: savedName,
+          email: userEmail,
+          cpf: '000.000.000-00',
+          password_hash: 'google_oauth'
+        }])
+        .select()
+        .maybeSingle()
+
+      if (newUser) {
+        userData = newUser
+        // Cria a conta bancária vinculada com saldo inicial 0
+        const { data: newAcc } = await supabase
+          .from('accounts')
+          .insert([{
+            user_id: newUser.id,
+            balance: 0.00,
+            account_number: String(Math.floor(100000 + Math.random() * 900000)),
+            pix_key: userEmail
+          }])
+          .select()
+          .maybeSingle()
+
+        if (newAcc) {
+          setAccount(newAcc)
+          setBalance(parseFloat(newAcc.balance))
+        }
+      }
+    }
 
     if (userData) {
       setUserName(userData.name)
@@ -25,7 +65,7 @@ export default function Dashboard() {
         .from('accounts')
         .select('*')
         .eq('user_id', userData.id)
-        .single()
+        .maybeSingle()
 
       if (accData) {
         setAccount(accData)
@@ -36,7 +76,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadAccountData()
-  }, [])
+  }, [userEmail])
 
   const processTransaction = async (type) => {
     const amount = parseFloat(amountInput)
@@ -61,7 +101,7 @@ export default function Dashboard() {
     setAmountInput('')
   }
 
-  // Função de Logout corrigida com encerramento de sessão no Supabase
+  // Função de Logout corrigida
   const handleLogout = async () => {
     await supabase.auth.signOut()
     localStorage.removeItem('userEmail')

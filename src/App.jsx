@@ -21,7 +21,7 @@ function App() {
       setLoading(false)
     })
 
-    // 2. Escuta alterações no estado de autenticação (Login / Logout / Callback OAuth)
+    // 2. Escuta alterações no estado de autenticação
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -38,10 +38,10 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Função auxiliar para armazenar dados do usuário no localStorage
+  // Extrai o nome real fornecido pelo Google Auth
   const saveUserData = (user) => {
     const email = user.email || ''
-    const name = user.user_metadata?.full_name || user.email || 'Usuário'
+    const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'Usuário'
     const avatar = user.user_metadata?.avatar_url || ''
 
     localStorage.setItem('userEmail', email)
