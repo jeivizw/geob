@@ -7,70 +7,77 @@ export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [balance, setBalance] = useState(0)
   const [account, setAccount] = useState(null)
-  
-  // Carrega imediatamente o nome do Google/localStorage se existir
   const [userName, setUserName] = useState(localStorage.getItem('userName') || '')
   const [amountInput, setAmountInput] = useState('')
-  const [userEmail] = useState(localStorage.getItem('userEmail') || 'cliente@geobank.com')
+  const userEmail = localStorage.getItem('userEmail') || 'cliente@geobank.com'
 
   // Carrega dados do usuário, conta e saldo do Supabase
   const loadAccountData = async () => {
     if (!userEmail) return
 
-    // 1. Busca usuário na tabela 'users'
-    let { data: userData } = await supabase
-      .from('users')
-      .select('id, name')
-      .eq('email', userEmail)
-      .maybeSingle()
-
-    // 2. Se logou via Google e ainda não está na tabela 'users', cria o registro e a conta bancária
-    if (!userData && userEmail !== 'cliente@geobank.com') {
-      const savedName = localStorage.getItem('userName') || 'Cliente'
-      const { data: newUser } = await supabase
+    try {
+      // 1. Busca usuário na tabela 'users'
+      let { data: userData, error: userError } = await supabase
         .from('users')
-        .insert([{
-          name: savedName,
-          email: userEmail,
-          cpf: '000.000.000-00',
-          password_hash: 'google_oauth'
-        }])
-        .select()
+        .select('id, name')
+        .eq('email', userEmail)
         .maybeSingle()
 
-      if (newUser) {
-        userData = newUser
-        // Cria a conta bancária vinculada com saldo inicial 0
-        const { data: newAcc } = await supabase
-          .from('accounts')
+      // 2. Se logou via Google e ainda não está na tabela 'users', cria o registro e a conta
+      if (!userData && userEmail !== 'cliente@geobank.com') {
+        const savedName = localStorage.getItem('userName') || 'Cliente'
+        const randomCpf = String(Math.floor(10000000000 + Math.random() * 90000000000))
+
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
           .insert([{
-            user_id: newUser.id,
-            balance: 0.00,
-            account_number: String(Math.floor(100000 + Math.random() * 900000)),
-            pix_key: userEmail
+            name: savedName,
+            email: userEmail,
+            cpf: randomCpf,
+            password_hash: 'google_oauth'
           }])
           .select()
           .maybeSingle()
 
-        if (newAcc) {
-          setAccount(newAcc)
-          setBalance(parseFloat(newAcc.balance))
+        if (newUser) {
+          userData = newUser
+        } else if (createError) {
+          console.error('Erro ao criar usuário:', createError.message)
         }
       }
-    }
 
-    if (userData) {
-      setUserName(userData.name)
-      const { data: accData } = await supabase
-        .from('accounts')
-        .select('*')
-        .eq('user_id', userData.id)
-        .maybeSingle()
+      // 3. Busca ou cria a conta bancária do usuário
+      if (userData) {
+        setUserName(userData.name)
+        let { data: accData } = await supabase
+          .from('accounts')
+          .select('*')
+          .eq('user_id', userData.id)
+          .maybeSingle()
 
-      if (accData) {
-        setAccount(accData)
-        setBalance(parseFloat(accData.balance))
+        // Se o usuário existe mas não tem conta bancária vinculada, cria uma
+        if (!accData) {
+          const { data: newAcc } = await supabase
+            .from('accounts')
+            .insert([{
+              user_id: userData.id,
+              balance: 0.00,
+              account_number: String(Math.floor(100000 + Math.random() * 900000)),
+              pix_key: userEmail
+            }])
+            .select()
+            .maybeSingle()
+
+          accData = newAcc
+        }
+
+        if (accData) {
+          setAccount(accData)
+          setBalance(parseFloat(accData.balance || 0))
+        }
       }
+    } catch (err) {
+      console.error('Erro ao carregar dados da conta:', err)
     }
   }
 
@@ -80,7 +87,8 @@ export default function Dashboard() {
 
   const processTransaction = async (type) => {
     const amount = parseFloat(amountInput)
-    if (isNaN(amount) || amount <= 0 || !account) return alert('Insira um valor válido.')
+    if (isNaN(amount) || amount <= 0) return alert('Insira um valor numérico válido.')
+    if (!account) return alert('Conta bancária não localizada. Tente recarregar a página.')
 
     let newBalance = balance
     if (type === 'deposit') newBalance += amount
@@ -89,19 +97,29 @@ export default function Dashboard() {
       else return alert('Saldo insuficiente.')
     }
 
-    await supabase.from('accounts').update({ balance: newBalance }).eq('id', account.id)
-    await supabase.from('transactions').insert([{
-      account_id: account.id,
-      transaction_type: type,
-      amount: amount,
-      description: type === 'deposit' ? 'Depósito via App' : 'Saque via App'
-    }])
+    try {
+      const { error: updateErr } = await supabase
+        .from('accounts')
+        .update({ balance: newBalance })
+        .eq('id', account.id)
 
-    setBalance(newBalance)
-    setAmountInput('')
+      if (updateErr) throw updateErr
+
+      await supabase.from('transactions').insert([{
+        account_id: account.id,
+        transaction_type: type,
+        amount: amount,
+        description: type === 'deposit' ? 'Depósito via App' : 'Saque via App'
+      }])
+
+      setBalance(newBalance)
+      setAmountInput('')
+      alert(`${type === 'deposit' ? 'Depósito' : 'Saque'} de R$ ${amount.toFixed(2)} realizado com sucesso!`)
+    } catch (err) {
+      alert('Erro ao processar transação: ' + err.message)
+    }
   }
 
-  // Função de Logout corrigida
   const handleLogout = async () => {
     await supabase.auth.signOut()
     localStorage.removeItem('userEmail')
@@ -146,7 +164,6 @@ export default function Dashboard() {
           </button>
         </header>
 
-        {/* MENSAGEM DE SAUDAÇÃO COM NOME */}
         <section className="px-8 pt-2 pb-4">
           <h1 className="text-2xl font-bold text-zinc-900 mb-1">
             Olá, {userName ? userName.split(' ')[0] : 'Cliente'}! 👋
@@ -159,10 +176,17 @@ export default function Dashboard() {
         </section>
 
         <section className="px-8 py-8 bg-zinc-50 border-y border-zinc-100">
-          <input type="text" value={amountInput} onChange={(e) => setAmountInput(e.target.value)} placeholder="0.00" className="w-full bg-white border border-zinc-200 rounded-2xl py-4 px-4 text-lg font-medium text-zinc-800 mb-4" />
+          <input 
+            type="text" 
+            inputMode="decimal"
+            value={amountInput} 
+            onChange={(e) => setAmountInput(e.target.value.replace(',', '.'))} 
+            placeholder="0.00" 
+            className="w-full bg-white border border-zinc-200 rounded-2xl py-4 px-4 text-lg font-medium text-zinc-800 mb-4" 
+          />
           <div className="grid grid-cols-2 gap-3">
-            <button onClick={() => processTransaction('deposit')} className="bg-[#ec0000] text-white rounded-2xl py-3.5 font-medium">Depositar</button>
-            <button onClick={() => processTransaction('withdraw')} className="bg-white text-zinc-900 border border-zinc-200 rounded-2xl py-3.5 font-medium">Sacar</button>
+            <button onClick={() => processTransaction('deposit')} className="bg-[#ec0000] hover:bg-[#cc0000] text-white rounded-2xl py-3.5 font-medium transition-colors">Depositar</button>
+            <button onClick={() => processTransaction('withdraw')} className="bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-200 rounded-2xl py-3.5 font-medium transition-colors">Sacar</button>
           </div>
         </section>
       </main>

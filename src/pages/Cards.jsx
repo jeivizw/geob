@@ -15,7 +15,7 @@ export default function Cards() {
       .from('users')
       .select('id, name')
       .eq('email', userEmail)
-      .single()
+      .maybeSingle()
 
     if (u) {
       setUserName(u.name.toUpperCase())
@@ -23,7 +23,7 @@ export default function Cards() {
         .from('accounts')
         .select('id')
         .eq('user_id', u.id)
-        .single()
+        .maybeSingle()
 
       if (acc) {
         setAccount(acc)
@@ -41,9 +41,8 @@ export default function Cards() {
     fetchCards()
   }, [])
 
-  // CRIA CARTÃO VIRTUAL OU FÍSICO COM O NOME DO USUÁRIO
   const handleCreateCard = async (type) => {
-    if (!account) return
+    if (!account) return alert('Conta bancária não carregada. Recarregue a página.')
     setLoading(true)
 
     const randomDigits = Math.floor(1000 + Math.random() * 9000)
@@ -53,7 +52,7 @@ export default function Cards() {
       card_holder_name: userName || 'CLIENTE GEOBANK',
       expiry_date: '12/30',
       cvv: String(Math.floor(100 + Math.random() * 900)),
-      card_type: type // 'virtual' ou 'physical'
+      card_type: type
     }
 
     const { error } = await supabase.from('cards').insert([newCard])
@@ -79,14 +78,13 @@ export default function Cards() {
   return (
     <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-100 p-8">
       <div className="flex items-center justify-between mb-6">
-        <button onClick={() => navigate('/dashboard')} className="w-10 h-10 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-600">
+        <button onClick={() => navigate('/dashboard')} className="w-10 h-10 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-600 hover:bg-zinc-100">
           <i className="fa-solid fa-arrow-left"></i>
         </button>
         <h2 className="text-lg font-bold text-zinc-900">Meus Cartões</h2>
         <div className="w-10"></div>
       </div>
 
-      {/* LISTA DE CARTÕES */}
       <div className="flex flex-col gap-4 mb-6">
         {cards.length === 0 ? (
           <p className="text-center text-zinc-400 text-sm py-8">Nenhum cartão cadastrado.</p>
@@ -131,12 +129,11 @@ export default function Cards() {
         )}
       </div>
 
-      {/* BOTÕES DE EMISSÃO DE CARTÃO */}
       <div className="flex flex-col gap-2">
         <button 
           onClick={() => handleCreateCard('virtual')} 
           disabled={loading} 
-          className="w-full bg-[#ec0000] hover:bg-[#cc0000] text-white rounded-2xl py-3.5 font-medium shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full bg-[#ec0000] hover:bg-[#cc0000] text-white rounded-2xl py-3.5 font-medium shadow-md flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
         >
           <i className="fa-solid fa-bolt text-sm"></i>
           {loading ? 'Criando...' : 'Gerar Cartão Virtual'}
@@ -145,7 +142,7 @@ export default function Cards() {
         <button 
           onClick={() => handleCreateCard('physical')} 
           disabled={loading} 
-          className="w-full bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-2xl py-3.5 font-medium border border-zinc-200 flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-2xl py-3.5 font-medium border border-zinc-200 flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
         >
           <i className="fa-solid fa-credit-card text-sm"></i>
           {loading ? 'Criando...' : 'Solicitar Cartão Físico'}
