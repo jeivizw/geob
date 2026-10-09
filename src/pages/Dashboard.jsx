@@ -61,8 +61,12 @@ export default function Dashboard() {
     setAmountInput('')
   }
 
-  const handleLogout = () => {
+  // Função de Logout corrigida com encerramento de sessão no Supabase
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
     localStorage.removeItem('userEmail')
+    localStorage.removeItem('userName')
+    localStorage.removeItem('userAvatar')
     navigate('/login')
   }
 

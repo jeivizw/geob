@@ -57,24 +57,37 @@ function App() {
     )
   }
 
+  const isAuthenticated = session || localStorage.getItem('userEmail')
+
   return (
     <Router>
       <Routes>
         <Route
           path="/"
-          element={session ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/login"
-          element={session ? <Navigate to="/dashboard" replace /> : <Login />}
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />}
         />
         <Route
           path="/register"
-          element={session ? <Navigate to="/dashboard" replace /> : <Register />}
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />}
         />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/pix" element={<Pix />} />
-        <Route path="/cards" element={<Cards />} />
+        
+        {/* Rotas protegidas */}
+        <Route
+          path="/dashboard"
+          element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/pix"
+          element={isAuthenticated ? <Pix /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/cards"
+          element={isAuthenticated ? <Cards /> : <Navigate to="/login" replace />}
+        />
       </Routes>
     </Router>
   )
