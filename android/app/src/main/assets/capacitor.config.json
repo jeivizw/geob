@@ -1,0 +1,5 @@
+{
+	"appId": "com.geobank.app",
+	"appName": "capacitor",
+	"webDir": "dist"
+}
