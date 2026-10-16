@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Favicon da Chama -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ec0000'><path d='M13.5 2c-3.1 3-5.5 6.2-5.5 10 0 .5.1 1 .2 1.5-1.2-1.2-1.7-2.9-1.7-4.5C4 11 2.5 13.5 2.5 16c0 3.6 3 6.5 6.8 6.5 4.3 0 7.2-3.8 7.2-7.5 0-4-3-8-3-13z'/></svg>" />
+    
+    <!-- FontAwesome e Fonte Inter -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <title>GeoBank</title>
+    
+    <style>
+      body { font-family: 'Inter', sans-serif; }
+      /* Remove as setinhas do input de número */
+      input[type=number]::-webkit-inner-spin-button, 
+      input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+      }
+      input[type=number] { -moz-appearance: textfield; }
+      /* Esconde a barra de rolagem dos botões rápidos */
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+  </head>
+  <body class="bg-[#f4f4f5] text-zinc-800 min-h-screen flex flex-col items-center justify-center p-4">
+    
+    <!-- O React vai renderizar o GeoBank exclusivamente dentro dessa div -->
+    <div id="root" class="w-full max-w-md"></div>
+    
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
